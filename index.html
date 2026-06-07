@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Suhu & Kelembapan</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .cards {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 20px;
+      gap: 20px;
+    }
+    .card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 12px;
+      width: 280px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .temp { color: #e74c3c; font-size: 3.5em; font-weight: bold; margin: 10px 0; }
+    .hum { color: #3498db; font-size: 3.5em; font-weight: bold; margin: 10px 0; }
+    .chart-container {
+      padding: 20px;
+      background: white;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      background: #ecf0f1;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌡️ Monitoring Suhu & Kelembapan</h1>
+      <p>Real-time via ThingSpeak</p>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <h2>Suhu</h2>
+        <div class="temp" id="temp">-- °C</div>
+      </div>
+      <div class="card">
+        <h2>Kelembapan</h2>
+        <div class="hum" id="hum">-- %</div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <h2 style="text-align:center;">📊 Grafik 24 Jam Terakhir</h2>
+      <canvas id="myChart" height="100"></canvas>
+    </div>
+
+    <footer>
+      <p id="update">Menunggu data dari sensor...</p>
+    </footer>
+  </div>
+
+  <script>
+    const CHANNEL_ID = '3402646';     // GANTI !!!
+    const READ_API_KEY = '09EEV6W488B20CQ8';   // Kosongkan dulu kalau channel Public
+
+    let chart;
+
+    async function fetchData() {
+      try {
+        const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${READ_API_KEY}&results=30`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.feeds && data.feeds.length > 0) {
+          const latest = data.feeds[data.feeds.length - 1];
+          
+          document.getElementById('temp').textContent = parseFloat(latest.field1 || 0).toFixed(1) + ' °C';
+          document.getElementById('hum').textContent = parseFloat(latest.field2 || 0).toFixed(1) + ' %';
+          
+          document.getElementById('update').textContent = 
+            'Terakhir update: ' + new Date(latest.created_at).toLocaleString('id-ID');
+
+          // Update Chart
+          updateChart(data.feeds);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('update').textContent = 'Gagal mengambil data dari ThingSpeak';
+      }
+    }
+
+    function updateChart(feeds) {
+      const labels = feeds.map(feed => new Date(feed.created_at).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}));
+      const tempData = feeds.map(feed => parseFloat(feed.field1));
+      const humData = feeds.map(feed => parseFloat(feed.field2));
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(document.getElementById('myChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Suhu (°C)',
+              data: tempData,
+              borderColor: '#e74c3c',
+              tension: 0.4,
+              fill: false
+            },
+            {
+              label: 'Kelembapan (%)',
+              data: humData,
+              borderColor: '#3498db',
+              tension: 0.4,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    // Jalankan pertama kali + update tiap 15 detik
+    fetchData();
+    setInterval(fetchData, 15000);
+  </script>
+</body>
+</html>
