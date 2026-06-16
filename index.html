@@ -152,6 +152,12 @@
       </div>
     </div>
 
+    <div style="text-align: center; margin: 10px 0 25px 0;">
+      <button id="downloadBtn" style="background-color: #27ae60; color: white; border: none; padding: 12px 25px; font-size: 1em; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
+        📥 Download Data (CSV)
+      </button>
+    </div>
+
     <div class="charts">
       <div class="chart-box">
         <h2 style="text-align:center; color:#e74c3c;">📊 Grafik Suhu 24 Jam Terakhir</h2>
@@ -237,8 +243,9 @@
     const READ_API_KEY = '09EEV6W488B20CQ8';
     
     let tempChart24, humChart24, tempChart5, humChart5;
+    let globalFeeds = []; // Variabel global penampung data untuk di-download
 
-    // Rumus THI Baru sesuai dengan gambar dokumen lampiran
+    // Rumus THI
     function calculateTHI(t, rh) {
       return t - (0.55 * (1 - (rh / 100)) * (t - 14.5));
     }
@@ -258,6 +265,9 @@
         const data = await response.json();
 
         if (data.feeds && data.feeds.length > 0) {
+          // MODIFIKASI: Simpan data ke variabel global agar bisa diakses fungsi downloadCSV
+          globalFeeds = data.feeds; 
+
           const latest = data.feeds[data.feeds.length - 1];
           const t = parseFloat(latest.field1 || 0);
           const rh = parseFloat(latest.field2 || 0);
@@ -311,7 +321,7 @@
       const tempData5 = sampledFeeds.map(feed => parseFloat(feed.field1));
       const humData5 = sampledFeeds.map(feed => parseFloat(feed.field2));
 
-      // Grafik 24 Jam
+      // Grafik Suhu 24 Jam
       if (tempChart24) tempChart24.destroy();
       tempChart24 = new Chart(document.getElementById('tempChart24'), {
         type: 'line', 
@@ -319,6 +329,7 @@
         options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } }}
       });
 
+      // Grafik Kelembapan 24 Jam
       if (humChart24) humChart24.destroy();
       humChart24 = new Chart(document.getElementById('humChart24'), {
         type: 'line', 
@@ -326,7 +337,7 @@
         options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false, max: 100 } }}
       });
 
-      // Grafik per 5 Menit
+      // Grafik Suhu 5 Menit
       if (tempChart5) tempChart5.destroy();
       tempChart5 = new Chart(document.getElementById('tempChart5'), {
         type: 'line', 
@@ -334,6 +345,7 @@
         options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } }}
       });
 
+      // Grafik Kelembapan 5 Menit
       if (humChart5) humChart5.destroy();
       humChart5 = new Chart(document.getElementById('humChart5'), {
         type: 'line', 
@@ -342,8 +354,44 @@
       });
     }
 
+    // Fungsi Logika Download ke CSV
+    function downloadCSV() {
+      if (globalFeeds.length === 0) {
+        alert("Data belum siap atau gagal dimuat!");
+        return;
+      }
+
+      // Membuat susunan header tabel CSV
+      let csvContent = "Waktu,Suhu (C),Kelembapan (%),THI,Kategori\n";
+
+      // Memasukkan data baris demi baris
+      globalFeeds.forEach(feed => {
+        const waktu = new Date(feed.created_at).toLocaleString('id-ID').replace(/,/g, '');
+        const suhu = parseFloat(feed.field1 || 0).toFixed(1);
+        const kelembapan = parseFloat(feed.field2 || 0).toFixed(1);
+        const thi = calculateTHI(parseFloat(feed.field1 || 0), parseFloat(feed.field2 || 0)).toFixed(1);
+        const kategori = getTHICategory(thi).text;
+
+        csvContent += `"${waktu}",${suhu},${kelembapan},${thi},"${kategori}"\n`;
+      });
+
+      // Eksekusi download via Blob browser
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Data_Monitoring_THI_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Pasang target click event ke ID tombol
+    document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+
     fetchData();
-    setInterval(fetchData, 300000); // Update setiap 5 menit
+    setInterval(fetchData, 300000); // Sinkronisasi otomatis ulang per 5 menit
   </script>
 </body>
 </html>
