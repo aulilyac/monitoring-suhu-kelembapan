@@ -14,7 +14,7 @@
       color: #333;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
       background: white;
       border-radius: 15px;
@@ -44,9 +44,21 @@
     }
     .temp { color: #e74c3c; font-size: 3.5em; font-weight: bold; margin: 10px 0; }
     .hum { color: #3498db; font-size: 3.5em; font-weight: bold; margin: 10px 0; }
-    .chart-container {
+
+    .charts {
       padding: 20px;
-      background: white;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .chart-box {
+      flex: 1;
+      min-width: 450px;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     footer {
       text-align: center;
@@ -74,9 +86,28 @@
       </div>
     </div>
 
-    <div class="chart-container">
-      <h2 style="text-align:center;">📊 Grafik 24 Jam Terakhir</h2>
-      <canvas id="myChart" height="100"></canvas>
+    <!-- === GRAFIK 24 JAM TERAKHIR === -->
+    <div class="charts">
+      <div class="chart-box">
+        <h2 style="text-align:center; color:#e74c3c;">📊 Grafik Suhu 24 Jam Terakhir</h2>
+        <canvas id="tempChart24" height="120"></canvas>
+      </div>
+      <div class="chart-box">
+        <h2 style="text-align:center; color:#3498db;">📊 Grafik Kelembapan 24 Jam Terakhir</h2>
+        <canvas id="humChart24" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- === GRAFIK PER 5 MENIT === -->
+    <div class="charts">
+      <div class="chart-box">
+        <h2 style="text-align:center; color:#e74c3c;">📊 Grafik Suhu per 5 Menit</h2>
+        <canvas id="tempChart5" height="120"></canvas>
+      </div>
+      <div class="chart-box">
+        <h2 style="text-align:center; color:#3498db;">📊 Grafik Kelembapan per 5 Menit</h2>
+        <canvas id="humChart5" height="120"></canvas>
+      </div>
     </div>
 
     <footer>
@@ -85,74 +116,93 @@
   </div>
 
   <script>
-    const CHANNEL_ID = '3402646';     // GANTI !!!
-    const READ_API_KEY = '09EEV6W488B20CQ8';   // Kosongkan dulu kalau channel Public
-
-    let chart;
+    const CHANNEL_ID = '3402646';
+    const READ_API_KEY = '09EEV6W488B20CQ8';
+    
+    let tempChart24, humChart24, tempChart5, humChart5;
 
     async function fetchData() {
       try {
-        const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${READ_API_KEY}&results=30`;
+        const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${READ_API_KEY}&results=200`;
         const response = await fetch(url);
         const data = await response.json();
 
         if (data.feeds && data.feeds.length > 0) {
           const latest = data.feeds[data.feeds.length - 1];
-          
+
           document.getElementById('temp').textContent = parseFloat(latest.field1 || 0).toFixed(1) + ' °C';
           document.getElementById('hum').textContent = parseFloat(latest.field2 || 0).toFixed(1) + ' %';
-          
-          document.getElementById('update').textContent = 
+
+          document.getElementById('update').textContent =
             'Terakhir update: ' + new Date(latest.created_at).toLocaleString('id-ID');
 
-          // Update Chart
-          updateChart(data.feeds);
+          updateAllCharts(data.feeds);
         }
       } catch (error) {
         console.error('Error:', error);
-        document.getElementById('update').textContent = 'Gagal mengambil data dari ThingSpeak';
+        document.getElementById('update').textContent = '❌ Gagal mengambil data dari ThingSpeak';
       }
     }
 
-    function updateChart(feeds) {
-      const labels = feeds.map(feed => new Date(feed.created_at).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}));
-      const tempData = feeds.map(feed => parseFloat(feed.field1));
-      const humData = feeds.map(feed => parseFloat(feed.field2));
+    // Fungsi sampling setiap 5 menit
+    function sampleEvery5Min(feeds) {
+      const sampled = [];
+      let lastTime = null;
 
-      if (chart) chart.destroy();
-
-      chart = new Chart(document.getElementById('myChart'), {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Suhu (°C)',
-              data: tempData,
-              borderColor: '#e74c3c',
-              tension: 0.4,
-              fill: false
-            },
-            {
-              label: 'Kelembapan (%)',
-              data: humData,
-              borderColor: '#3498db',
-              tension: 0.4,
-              fill: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'top' } },
-          scales: { y: { beginAtZero: true } }
+      for (let feed of feeds) {
+        const time = new Date(feed.created_at);
+        if (!lastTime || (time - lastTime) >= 5 * 60 * 1000) {
+          sampled.push(feed);
+          lastTime = time;
         }
+      }
+      return sampled;
+    }
+
+    function updateAllCharts(feeds) {
+      const labels24 = feeds.map(feed => 
+        new Date(feed.created_at).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})
+      );
+
+      const tempData24 = feeds.map(feed => parseFloat(feed.field1));
+      const humData24 = feeds.map(feed => parseFloat(feed.field2));
+
+      const sampledFeeds = sampleEvery5Min(feeds);
+      const labels5 = sampledFeeds.map(feed => 
+        new Date(feed.created_at).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})
+      );
+      const tempData5 = sampledFeeds.map(feed => parseFloat(feed.field1));
+      const humData5 = sampledFeeds.map(feed => parseFloat(feed.field2));
+
+      // Grafik 24 Jam
+      if (tempChart24) tempChart24.destroy();
+      tempChart24 = new Chart(document.getElementById('tempChart24'), {
+        type: 'line', data: { labels: labels24, datasets: [{ label: 'Suhu (°C)', data: tempData24, borderColor: '#e74c3c', tension: 0.4, fill: true }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } }}
+      });
+
+      if (humChart24) humChart24.destroy();
+      humChart24 = new Chart(document.getElementById('humChart24'), {
+        type: 'line', data: { labels: labels24, datasets: [{ label: 'Kelembapan (%)', data: humData24, borderColor: '#3498db', tension: 0.4, fill: true }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 100 } }}
+      });
+
+      // Grafik per 5 Menit
+      if (tempChart5) tempChart5.destroy();
+      tempChart5 = new Chart(document.getElementById('tempChart5'), {
+        type: 'line', data: { labels: labels5, datasets: [{ label: 'Suhu (°C)', data: tempData5, borderColor: '#e74c3c', tension: 0.4, fill: true }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } }}
+      });
+
+      if (humChart5) humChart5.destroy();
+      humChart5 = new Chart(document.getElementById('humChart5'), {
+        type: 'line', data: { labels: labels5, datasets: [{ label: 'Kelembapan (%)', data: humData5, borderColor: '#3498db', tension: 0.4, fill: true }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 100 } }}
       });
     }
 
-    // Jalankan pertama kali + update tiap 15 detik
     fetchData();
-    setInterval(fetchData, 15000);
+    setInterval(fetchData, 300000); // Update setiap 5 menit
   </script>
 </body>
 </html>
