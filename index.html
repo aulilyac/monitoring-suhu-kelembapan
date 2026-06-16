@@ -14,7 +14,7 @@
       color: #333;
     }
     .container {
-      max-width: 1200px;
+      max-width: 950px;
       margin: 0 auto;
       background: white;
       border-radius: 15px;
@@ -38,28 +38,89 @@
       background: #f8f9fa;
       padding: 20px;
       border-radius: 12px;
-      width: 280px;
+      width: 240px;
       text-align: center;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    .temp { color: #e74c3c; font-size: 3.5em; font-weight: bold; margin: 10px 0; }
-    .hum { color: #3498db; font-size: 3.5em; font-weight: bold; margin: 10px 0; }
-
+    .temp { color: #e74c3c; font-size: 2.8em; font-weight: bold; margin: 8px 0; }
+    .hum { color: #3498db; font-size: 2.8em; font-weight: bold; margin: 8px 0; }
+    .thi { font-size: 2.8em; font-weight: bold; margin: 8px 0; }
+    #thi-category { font-weight: bold; font-size: 1.1em; display: block; margin-top: 5px;}
+    
     .charts {
-      padding: 20px;
+      padding: 10px 20px;
       display: flex;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 18px;
       justify-content: center;
     }
     .chart-box {
       flex: 1;
-      min-width: 450px;
+      min-width: 420px;
       background: #f8f9fa;
       padding: 15px;
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
+    .chart-box h2 {
+      font-size: 1.2em;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+    
+    /* Info & Keterangan THI Section */
+    .info-section {
+      padding: 20px;
+      background: #ffffff;
+      border-top: 1px solid #eee;
+    }
+    .info-block {
+      background: #fdfdfd;
+      border: 1px solid #eef2f5;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    .info-block h3 {
+      margin-top: 0;
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 5px;
+      display: inline-block;
+    }
+    .info-block p {
+      line-height: 1.5;
+      color: #555;
+      font-size: 0.95em;
+    }
+    
+    /* Keterangan Tabel THI */
+    .thi-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+    .thi-table th, .thi-table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    .thi-table th {
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      color: white;
+      font-weight: bold;
+      font-size: 0.85em;
+      text-align: center;
+      min-width: 120px;
+    }
+    
     footer {
       text-align: center;
       padding: 15px;
@@ -84,29 +145,85 @@
         <h2>Kelembapan</h2>
         <div class="hum" id="hum">-- %</div>
       </div>
+      <div class="card">
+        <h2>Temperature Humidity Index (THI)</h2>
+        <div class="thi" id="thi">--</div>
+        <span id="thi-category">--</span>
+      </div>
     </div>
 
-    <!-- === GRAFIK 24 JAM TERAKHIR === -->
     <div class="charts">
       <div class="chart-box">
         <h2 style="text-align:center; color:#e74c3c;">📊 Grafik Suhu 24 Jam Terakhir</h2>
-        <canvas id="tempChart24" height="120"></canvas>
+        <canvas id="tempChart24" height="75"></canvas>
       </div>
       <div class="chart-box">
         <h2 style="text-align:center; color:#3498db;">📊 Grafik Kelembapan 24 Jam Terakhir</h2>
-        <canvas id="humChart24" height="120"></canvas>
+        <canvas id="humChart24" height="75"></canvas>
       </div>
     </div>
 
-    <!-- === GRAFIK PER 5 MENIT === -->
     <div class="charts">
       <div class="chart-box">
         <h2 style="text-align:center; color:#e74c3c;">📊 Grafik Suhu per 5 Menit</h2>
-        <canvas id="tempChart5" height="120"></canvas>
+        <canvas id="tempChart5" height="75"></canvas>
       </div>
       <div class="chart-box">
         <h2 style="text-align:center; color:#3498db;">📊 Grafik Kelembapan per 5 Menit</h2>
-        <canvas id="humChart5" height="120"></canvas>
+        <canvas id="humChart5" height="75"></canvas>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-block">
+        <h3>💡 Apa itu THI (Temperature Humidity Index)?</h3>
+        <p>
+          <strong>THI (Indeks Suhu dan Kelembapan)</strong> adalah sebuah indikator atau ukuran yang digunakan untuk menilai tingkat kenyamanan termal suatu lingkungan berdasarkan kombinasi dari nilai suhu udara aktual dan kelembapan relatif (RH). THI sangat berguna untuk mendeteksi potensi terjadinya beban panas berlebih (<em>Heat Stress</em>) baik pada manusia maupun pada sektor peternakan (hewan ternak). 
+        </p>
+        <p>
+          Rumus matematis kalkulasi baru yang diterapkan pada dashboard saat ini:<br>
+          <code>THI = Suhu - [0.55 × (1 - (Kelembapan / 100)) × (Suhu - 14.5)]</code>
+        </p>
+      </div>
+
+      <div class="info-block">
+        <h3>📋 Tabel Indeks Kategori Kenyamanan THI</h3>
+        <table class="thi-table">
+          <thead>
+            <tr>
+              <th>Nilai THI</th>
+              <th>Kategori Status</th>
+              <th>Deskripsi / Penjelasan Dampak Lingkungan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>&lt; 70</td>
+              <td><span class="badge" style="background-color: #4caf50;">Nyaman</span></td>
+              <td>Kondisi lingkungan ideal, sejuk, aman, dan bebas dari indikasi stres panas.</td>
+            </tr>
+            <tr>
+              <td>70 - 74</td>
+              <td><span class="badge" style="background-color: #ff9800;">Agak Panas</span></td>
+              <td>Mulai terasa hangat. Sebagian individu atau hewan sensitif mulai merasakan ketidaknyamanan ringan.</td>
+            </tr>
+            <tr>
+              <td>75 - 79</td>
+              <td><span class="badge" style="background-color: #f57c00;">Panas</span></td>
+              <td>Kondisi tidak nyaman. Diperlukan sirkulasi udara atau ventilasi tambahan yang baik.</td>
+            </tr>
+            <tr>
+              <td>80 - 84</td>
+              <td><span class="badge" style="background-color: #e64a19;">Sangat Panas</span></td>
+              <td>Tingkat ketidaknyamanan tinggi. Berisiko menyebabkan penurunan produktivitas/kondisi fisik.</td>
+            </tr>
+            <tr>
+              <td>&ge; 85</td>
+              <td><span class="badge" style="background-color: #d32f2f;">Bahaya (Heat Stress)</span></td>
+              <td>Kondisi ekstrim kritis. Berisiko tinggi memicu stres panas akut yang membahayakan kesehatan.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -121,6 +238,19 @@
     
     let tempChart24, humChart24, tempChart5, humChart5;
 
+    // Rumus THI Baru sesuai dengan gambar dokumen lampiran
+    function calculateTHI(t, rh) {
+      return t - (0.55 * (1 - (rh / 100)) * (t - 14.5));
+    }
+
+    function getTHICategory(thi) {
+      if (thi < 70) return { text: "Nyaman", color: "#4caf50" };
+      if (thi < 75) return { text: "Agak Panas", color: "#ff9800" };
+      if (thi < 80) return { text: "Panas", color: "#f57c00" };
+      if (thi < 85) return { text: "Sangat Panas", color: "#e64a19" };
+      return { text: "Bahaya (Heat Stress)", color: "#d32f2f" };
+    }
+
     async function fetchData() {
       try {
         const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${READ_API_KEY}&results=200`;
@@ -129,9 +259,19 @@
 
         if (data.feeds && data.feeds.length > 0) {
           const latest = data.feeds[data.feeds.length - 1];
+          const t = parseFloat(latest.field1 || 0);
+          const rh = parseFloat(latest.field2 || 0);
+          const thi = calculateTHI(t, rh);
 
-          document.getElementById('temp').textContent = parseFloat(latest.field1 || 0).toFixed(1) + ' °C';
-          document.getElementById('hum').textContent = parseFloat(latest.field2 || 0).toFixed(1) + ' %';
+          // Update Card
+          document.getElementById('temp').textContent = t.toFixed(1) + ' °C';
+          document.getElementById('hum').textContent = rh.toFixed(1) + ' %';
+          
+          document.getElementById('thi').textContent = thi.toFixed(1);
+          const category = getTHICategory(thi);
+          const catEl = document.getElementById('thi-category');
+          catEl.textContent = category.text;
+          catEl.style.color = category.color;
 
           document.getElementById('update').textContent =
             'Terakhir update: ' + new Date(latest.created_at).toLocaleString('id-ID');
@@ -144,11 +284,9 @@
       }
     }
 
-    // Fungsi sampling setiap 5 menit
     function sampleEvery5Min(feeds) {
       const sampled = [];
       let lastTime = null;
-
       for (let feed of feeds) {
         const time = new Date(feed.created_at);
         if (!lastTime || (time - lastTime) >= 5 * 60 * 1000) {
@@ -163,7 +301,6 @@
       const labels24 = feeds.map(feed => 
         new Date(feed.created_at).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})
       );
-
       const tempData24 = feeds.map(feed => parseFloat(feed.field1));
       const humData24 = feeds.map(feed => parseFloat(feed.field2));
 
@@ -177,27 +314,31 @@
       // Grafik 24 Jam
       if (tempChart24) tempChart24.destroy();
       tempChart24 = new Chart(document.getElementById('tempChart24'), {
-        type: 'line', data: { labels: labels24, datasets: [{ label: 'Suhu (°C)', data: tempData24, borderColor: '#e74c3c', tension: 0.4, fill: true }] },
-        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } }}
+        type: 'line', 
+        data: { labels: labels24, datasets: [{ label: 'Suhu (°C)', data: tempData24, borderColor: '#e74c3c', tension: 0.4, fill: true, pointRadius: 1 }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } }}
       });
 
       if (humChart24) humChart24.destroy();
       humChart24 = new Chart(document.getElementById('humChart24'), {
-        type: 'line', data: { labels: labels24, datasets: [{ label: 'Kelembapan (%)', data: humData24, borderColor: '#3498db', tension: 0.4, fill: true }] },
-        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 100 } }}
+        type: 'line', 
+        data: { labels: labels24, datasets: [{ label: 'Kelembapan (%)', data: humData24, borderColor: '#3498db', tension: 0.4, fill: true, pointRadius: 1 }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false, max: 100 } }}
       });
 
       // Grafik per 5 Menit
       if (tempChart5) tempChart5.destroy();
       tempChart5 = new Chart(document.getElementById('tempChart5'), {
-        type: 'line', data: { labels: labels5, datasets: [{ label: 'Suhu (°C)', data: tempData5, borderColor: '#e74c3c', tension: 0.4, fill: true }] },
-        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } }}
+        type: 'line', 
+        data: { labels: labels5, datasets: [{ label: 'Suhu (°C)', data: tempData5, borderColor: '#e74c3c', tension: 0.4, fill: true, pointRadius: 2 }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } }}
       });
 
       if (humChart5) humChart5.destroy();
       humChart5 = new Chart(document.getElementById('humChart5'), {
-        type: 'line', data: { labels: labels5, datasets: [{ label: 'Kelembapan (%)', data: humData5, borderColor: '#3498db', tension: 0.4, fill: true }] },
-        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 100 } }}
+        type: 'line', 
+        data: { labels: labels5, datasets: [{ label: 'Kelembapan (%)', data: humData5, borderColor: '#3498db', tension: 0.4, fill: true, pointRadius: 2 }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false, max: 100 } }}
       });
     }
 
